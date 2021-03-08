@@ -339,9 +339,56 @@ function uriBuilder(...args) {
   return args.join("/");
 }
 
+/**
+ * Executes the current library to specify a custom function
+ * @param {String} appCode Your appCode
+ * @param {String} FunctionName Custom function name
+ * @param {String} tableName The name of the table to operate on
+ * @param {Array} Argument ask sb to do sth ;
+ * @param {Function} callback The callback function that fires after execution
+ */
+ async function callFunction(appCode, FunctionName, tableName, Argument = [], callback) {
+  let arr = [tableName];
+  let ArgumentStr = JSON.stringify(Argument);
+  arr.push(ArgumentStr)
+  let data = JSON.stringify(arr)
+
+  await signAndBroadcast(
+    'MsgCallFunction',
+    {
+      appCode,
+      function_name: FunctionName,
+      argument: data
+    },
+    callback
+  );
+}
+
+/**
+ * Executes the current library to specify a custom function
+ * @param {String} appCode Your appCode
+ * @param {String} FunctionName Custom function name
+ * @param {String} tableName The name of the table to operate on
+ * @param {Array} Argument ask sb to do sth ;
+ * @param {Function} callback The callback function that fires after execution
+ */
+async function callCustomQuerier(appCode, FunctionName, tableName, Argument = [], callback) {
+  Argument.unshift(tableName)
+  let query = '';
+  Argument.forEach(element => {
+    query += bs58.encode(Buffer.from(element)) + '/'
+  });
+  let bs = query.substring(0, query.length - 1);
+  let bss = bs58.encode(Buffer.from(bs))
+  var uri = uriBuilder("call-custom-querier", appCode, FunctionName, bss)
+  var response = await restGet(uri);
+  return response.data.result;
+}
+
+
 export { getFriends, getPendingFriends, getAppCode, getApps, getApp, isAppUser, isSysAdmin, checkChainId,
          getTables, getTable, getGroups, getGroupMembers, getTableOptions, getFieldOptions,
          getInsertFilter, getTrigger, getTableMemo, getGroupMemo, getTableRaw, uriBuilder,
          getAllIds, getIdsBy, getRow, getAccount, insertRow, sendToken, canInsertRow,
-         uploadFile, addFriend, dropFriend, respondFriend, commit, querier
+         uploadFile, addFriend, dropFriend, respondFriend, commit, querier, callFunction ,callCustomQuerier
 };
